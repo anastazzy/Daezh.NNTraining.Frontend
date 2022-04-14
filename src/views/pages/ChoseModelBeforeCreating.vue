@@ -7,14 +7,20 @@
       @click="choosingTheModelForm">Create the first Model
   </el-button>
   <div v-if="isChooseOfModelType">
+    Choose the model type:
     <el-table
         :data="listTypeOfModels"
         highlight-current-row
         style="width: 100%"
         @current-change="onRowChange">
-      <el-table-column type="index" width="50" />
+<!--      <el-table-column type="index" width="50" />-->
       <el-table-column prop="name" width="120" />
     </el-table>
+
+    <template>
+      <el-input v-model="input" placeholder="Please input" clearable />
+    </template>
+
     <el-button v-if="modelType != null">Create a Model</el-button>
   </div>
 

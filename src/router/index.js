@@ -2,7 +2,6 @@ import {createRouter, createWebHistory} from 'vue-router'
 
 
 import Index from '@/views/Index.vue'
-import Main from "@/views/pages/Main";
 
 const routes = [
     {
@@ -18,8 +17,10 @@ const routes = [
                     import(/* webpackChunkName: "ChoseModelBeforeCreating" */ '@/views/pages/ChoseModelBeforeCreating.vue'),
             },
             {
-                path: 'main',
-                component: Main,
+                path: 'listModels',
+                name:'ListModels',
+                component:()=>
+                    import(/* webpackChunkName: "ListModels" */ '@/views/pages/ListModels.vue'),
             },
             // {
             //     path: '/tasks/new',
