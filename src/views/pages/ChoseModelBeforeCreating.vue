@@ -13,15 +13,18 @@
         highlight-current-row
         style="width: 100%"
         @current-change="onRowChange">
-<!--      <el-table-column type="index" width="50" />-->
       <el-table-column prop="name" width="120" />
     </el-table>
-
-    <template>
-      <el-input v-model="input" placeholder="Please input" clearable />
-    </template>
-
-    <el-button v-if="modelType != null">Create a Model</el-button>
+    <el-input
+        v-if="modelType != null"
+        v-model="nameModel"
+        placeholder="Name your model">
+    </el-input>
+    <el-button
+        v-if="modelType != null"
+        @click="handleCreate">
+      Create a Model
+    </el-button>
   </div>
 
 </template>
@@ -30,6 +33,8 @@
 import StartWindow from "@/components/StartWindow";
 import axios from "axios";
 import { ref, onMounted } from "vue";
+import router from "@/router";
+import listModels from "@/views/pages/ListModels";
 
 
 
@@ -42,12 +47,28 @@ export default {
     const listTypeOfModels = ref([])
     const modelType = ref(null)
     const isChooseOfModelType = ref(false)
+    const nameModel = ref(null)
 
     onMounted(async () => {
       let response = await axios.get('/CrudModel/types');
       listTypeOfModels.value = response.data;
     })
 
+    const handleCreate = async () => {
+      const date = new Date(Date.now());
+      let response = await axios.post('/CrudModel', {
+        "name": nameModel.value,
+        "modelType": modelType.value.id,
+        "modelStatus": 0,
+        "parameters": {
+          "startDate": date.toISOString()
+        }
+      });
+      if (response.status == 200){
+        await router.push({name: 'ListModels'})
+      }
+      console.log(response)
+    }
     const onRowChange = (value) => {
       modelType.value = value;
       console.log(modelType.value)
@@ -61,7 +82,9 @@ export default {
       listTypeOfModels,
       onRowChange,
       isChooseOfModelType,
-      choosingTheModelForm
+      choosingTheModelForm,
+      nameModel,
+      handleCreate
     }
   }
 }
