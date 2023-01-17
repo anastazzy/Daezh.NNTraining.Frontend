@@ -8,7 +8,7 @@ export default {
   name: "StartWindow",
   methods:{
     choosingTheModel: async function (){
-      //новый комментарий
+
     }
   },
   data(){
