@@ -8,19 +8,20 @@ const routes = [
         path: '/',
         name: 'Index',
         component: Index,
-        redirect: { name: 'ChoseModelBeforeCreating' },
+        redirect: { name: 'models' },
         children: [
             {
-                path: 'ChoseModelBeforeCreating',
-                name: 'ChoseModelBeforeCreating',
+                path: 'models',
+                name: 'models',
                 component: () =>
-                    import(/* webpackChunkName: "ChoseModelBeforeCreating" */ '@/views/pages/ChoseModelBeforeCreating.vue'),
+                    import(/* webpackChunkName: "Models" */ '@/views/pages/Models.vue'),
             },
             {
-                path: 'listModels',
-                name:'ListModels',
+                path: 'models/:id',
+                props: 'true',
+                name:'model',
                 component:()=>
-                    import(/* webpackChunkName: "ListModels" */ '@/views/pages/ListModels.vue'),
+                    import(/* webpackChunkName: "Models" */ '@/views/pages/Model.vue'),
             },
             // {
             //     path: '/tasks/new',
