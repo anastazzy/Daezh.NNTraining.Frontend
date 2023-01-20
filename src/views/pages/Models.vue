@@ -100,10 +100,12 @@ export default {
 
     const handleView = async (index, model) => {
       let response = await axios.get('/BaseModelService/' + model.id);
-      if (response.status == 200){
+      if (response.status === 200){
         isModelView = true
         modelInfo.value = response.data
-        await router.push({name:"Models", params:{
+        await router.push({
+          name: "model",
+          params:{
             id: model.id
           }})
       }
@@ -129,7 +131,7 @@ export default {
           "startDate": date.toISOString()
         }
       });
-      if (response.status == 200){
+      if (response.status === 200){
         await router.push({name: 'Models'})
       }
       console.log(response)

@@ -18,10 +18,9 @@ const routes = [
             },
             {
                 path: 'models/:id',
-                props: 'true',
                 name:'model',
                 component:()=>
-                    import(/* webpackChunkName: "Models" */ '@/views/pages/Model.vue'),
+                    import(/* webpackChunkName: "Model" */ '@/views/pages/Model.vue'),
             },
             // {
             //     path: '/tasks/new',
@@ -55,9 +54,7 @@ const routes = [
 
 
 const router = createRouter({
-    history: createWebHistory(process.env.BASE_URL),
-    linkActiveClass: 'is-active',
-    linkExactActiveClass: '',
+    history: createWebHistory(),
     routes
 })
 
