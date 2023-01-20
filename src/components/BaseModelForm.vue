@@ -16,6 +16,7 @@
       <el-descriptions-item label="Parameters">
         {{modelInfo.parameters}}
         {{types}}
+        <component :is="dynamicComponent"></component>
 <!--        TODO: make component witch can swith types of models-->
       </el-descriptions-item>
     </el-descriptions>
@@ -64,37 +65,54 @@ import { ref, onMounted } from "vue";
 import {reactive} from 'vue'
 import axios from "axios";
 import { genFileId } from 'element-plus'
+import DataPredictionParams from "./DataPredictionParams";
 
 export default {
   name: "BaseModelForm",
+  components: {
+    DataPredictionParams,
+  },
   props: {
     modelInfo: {
       type: Object,
       default: null,
     },
-    name:{
-      type: String,
-      default: null,
-    },
-    type:{
-      type: String,
-      default: null,
-    },
-    status:{
-      type: String,
-      default: null,
-    },
-    parameters:{
+    types: {
       type: Array,
       default: null,
+    },
+    // name:{
+    //   type: String,
+    //   default: null,
+    // },
+    // type:{
+    //   type: String,
+    //   default: null,
+    // },
+    // status:{
+    //   type: String,
+    //   default: null,
+    // },
+    // parameters:{
+    //   type: Array,
+    //   default: null,
+    // }
+  },
+
+  computed: {
+    dynamicComponent: function () {
+      switch (this.modelInfo.typeName){
+        case this.types[0].name:
+          return 'data-prediction-params'
+        default:
+          break
+      }
+
+      throw new Error()
     }
   },
 
-  components: {
-  },
-
   setup() {
-    const types = ref([]);
     const statuses = ref([]);
     const form = reactive({
       name: '',
@@ -103,7 +121,6 @@ export default {
     const upload = ref();
 
     onMounted(async () => {
-      types.value = (await axios.get('/BaseModelService/types')).data;
       statuses.value = (await axios.get('/BaseModelService/statuses')).data;
     })
 
@@ -123,7 +140,6 @@ export default {
     }
 
     return {
-      types,
       statuses,
       form
     }

@@ -1,5 +1,5 @@
 <template>
-  <base-model-form v-bind:model-info="modelInfo" v-bind:name="name"/>
+  <base-model-form v-bind:model-info="modelInfo" v-bind:types="types"/>
 </template>
 
 <script>
@@ -14,11 +14,13 @@ export default {
     BaseModelForm
   },
   setup(){
+    const types = ref([]);
     const modelInfo = ref();
     const name = ref();
 
     onMounted(async () => {
       let modelId = router.currentRoute.value.params.id;
+      types.value = (await axios.get('/BaseModelService/types')).data;
       let response = await axios.get('/BaseModelService/' + modelId);
       if (response.status === 200){
         modelInfo.value = response.data
@@ -28,6 +30,7 @@ export default {
 
     return{
       modelInfo,
+      types,
       name
     }
   }
