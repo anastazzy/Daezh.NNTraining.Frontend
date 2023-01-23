@@ -14,10 +14,7 @@
         {{modelInfo.statusName}}
       </el-descriptions-item>
       <el-descriptions-item label="Parameters">
-        {{modelInfo.parameters}}
-        {{types}}
-        <component :is="dynamicComponent"></component>
-<!--        TODO: make component witch can swith types of models-->
+        <component :is="dynamicComponent" v-bind:parameters = "modelInfo.parameters"></component>
       </el-descriptions-item>
     </el-descriptions>
     <el-button type="primary">
@@ -65,7 +62,7 @@ import { ref, onMounted } from "vue";
 import {reactive} from 'vue'
 import axios from "axios";
 import { genFileId } from 'element-plus'
-import DataPredictionParams from "./DataPredictionParams";
+import DataPredictionParams from "./Params/DataPredictionParams";
 
 export default {
   name: "BaseModelForm",
