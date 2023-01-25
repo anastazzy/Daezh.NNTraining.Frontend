@@ -1,5 +1,5 @@
 <template>
-  <base-model-form v-bind:model-info="modelInfo" v-bind:types="types"/>
+  <base-model-form v-if="modelInfo" v-bind:model-info="modelInfo" v-bind:types="types"/>
 </template>
 
 <script>
