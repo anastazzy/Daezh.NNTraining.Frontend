@@ -1,29 +1,116 @@
 <template>
-  <template v-if="modelInfo">
-    <el-descriptions
-        title="Description of model"
-        :column="3"
-    >
-      <el-descriptions-item label="Name">
-        {{modelInfo.name}}
-      </el-descriptions-item>
-      <el-descriptions-item label="Type">
-        {{modelInfo.typeName}}
-      </el-descriptions-item>
-      <el-descriptions-item label="Status">
-        {{modelInfo.statusName}}
-      </el-descriptions-item>
-      <el-descriptions-item label="Parameters">
-        <component :is="dynamicComponent" v-bind:parameters = "modelInfo.parameters"></component>
-      </el-descriptions-item>
-    </el-descriptions>
-    <el-button type="primary">
-      Edit
-    </el-button>
-    <el-button>
-      Save
-    </el-button>
+  <template v-if="!isNameEditing">
+    <template v-if="modelInfo">
+      <el-descriptions
+          title="1 - Description of model"
+          :column="3"
+      >
+        <el-descriptions-item label="Name">
+          {{modelInfo.name}}
+        </el-descriptions-item>
+        <el-descriptions-item label="Type">
+          {{modelInfo.typeName}}
+        </el-descriptions-item>
+        <el-descriptions-item label="Status">
+          {{modelInfo.statusName}}
+        </el-descriptions-item>
+      </el-descriptions>
+      <!--TODO: reload component after upload the file-->
+      <el-descriptions
+          title="2 - Choose the train set"
+          :column="2"
+          v-if="this.getKeyByValue(this.statuses, this.modelInfo.statusName) !== 0"
+      >
+        <el-descriptions-item v-if="selectedTrainSetName && files" label="Choose from uploaded files:">
+            <el-select v-if="selectedTrainSetName" v-model="selectedTrainSetName" class="m-2" placeholder="select">
+              <el-option
+                  v-for="item in files"
+                  :key="item.fileNameInStorage"
+                  :label="item.fileName"
+                  :value="item.fileNameInStorage"
+              />
+            </el-select>
+            <el-button type="primary" @click="handleSaveTrainSet">
+              Save
+            </el-button>
+        </el-descriptions-item>
+        <el-descriptions-item v-if="selectedTrainSetName && files" label="Or upload new file:" class="el-row">
+          <el-upload
+              ref="upload"
+              v-model:file-list="selectedFile"
+              class="upload-demo"
+              :action="'/api/BaseModelService/' + modelId + '/train-sets'"
+              :limit="1"
+              :on-exceed="handleExceed"
+              :on-change="handleUploadBefore"
+              :auto-upload="false"
+              name="trainSet"
+          >
+            <template #trigger>
+              <el-button type="primary">select file</el-button>
+            </template>
+            <el-button class="ml-3" type="success" @click="submitUpload">
+              add new file
+            </el-button>
+            <template #tip>
+              <div class="el-upload__tip text-red">
+                limit 1 file, new file will cover the old file
+              </div>
+            </template>
+          </el-upload>
+        </el-descriptions-item>
+        <el-descriptions-item v-else>
+          загрузить тренировочный сет
+<!--              <el-upload-->
+<!--                  ref="upload"-->
+<!--                  class="upload-demo"-->
+<!--                  action="/BaseModelService/{{modelId.value}}/train-sets"-->
+<!--                  :limit="1"-->
+<!--                  :on-exceed="handleExceed"-->
+<!--                  :auto-upload="false"-->
+<!--              >-->
+<!--                <template slot="trigger">-->
+<!--                  <el-button type="primary">select file</el-button>-->
+<!--                </template>-->
+<!--                <el-button class="ml-3" type="success" @click="submitUpload">-->
+<!--                  add new file-->
+<!--                </el-button>-->
+<!--                <template>-->
+<!--                  <div class="el-upload__tip text-red">-->
+<!--                    limit 1 file, new file will cover the old file-->
+<!--                  </div>-->
+<!--                </template>-->
+<!--              </el-upload>-->
+        </el-descriptions-item>
+      </el-descriptions>
+      <component v-if="trainSetName" :is="dynamicComponentParams" v-bind:parameters = "modelInfo.parameters"></component>
+<!--      <el-button type="primary" @click="isNameEditing = true">-->
+<!--        Edit name-->
+<!--      </el-button>-->
+    </template>
   </template>
+<!--  <template v-if="isNameEditing">-->
+<!--    <el-header style="text-align: left; font-size: 15px">-->
+<!--      <el-button type="primary" @click="isNameEditing = false">-->
+<!--        <el-icon style="margin-top: 1px;"><Back /></el-icon>-->
+<!--        <span>-->
+<!--      Back-->
+<!--      </span>-->
+<!--      </el-button>-->
+<!--    </el-header>-->
+<!--    <el-descriptions-->
+<!--        title="Edit you`re model according with you requirements"-->
+<!--        :column="3"-->
+<!--    />-->
+<!--    <el-form :model="form" label-width="120px">-->
+<!--      <el-form-item label="Name">-->
+<!--        <el-input v-model="form.name" />-->
+<!--      </el-form-item>-->
+<!--    </el-form>-->
+<!--    <el-button type="primary" @click="onSave">-->
+<!--      Save-->
+<!--    </el-button>-->
+<!--  </template>-->
 
   <el-form>
 <!--    <el-form-item label="Model name">-->
@@ -60,9 +147,12 @@
 <script>
 import { ref, onMounted } from "vue";
 import {reactive} from 'vue'
-import axios from "axios";
+import { h } from 'vue'
 import { genFileId } from 'element-plus'
+import axios from "axios";
+import { ElNotification } from 'element-plus'
 import DataPredictionParams from "./Params/DataPredictionParams";
+import router from "@/router";
 
 export default {
   name: "BaseModelForm",
@@ -78,67 +168,113 @@ export default {
       type: Array,
       default: null,
     },
-    // name:{
-    //   type: String,
-    //   default: null,
-    // },
-    // type:{
-    //   type: String,
-    //   default: null,
-    // },
-    // status:{
-    //   type: String,
-    //   default: null,
-    // },
-    // parameters:{
-    //   type: Array,
-    //   default: null,
-    // }
   },
 
   computed: {
-    dynamicComponent: function () {
-      switch (this.modelInfo.typeName){
-        case this.types[0].name:
-          return 'data-prediction-params'
-        default:
-          break
+    dynamicComponentParams: function () {
+      if (this.getKeyByValue(this.statuses, this.modelInfo.statusName) > 0){
+        switch (this.modelInfo.typeName){
+          case this.types[0].name:
+            return 'data-prediction-params'
+          default:
+            break
+        }
       }
-
-      throw new Error()
-    }
+    },
   },
 
-  setup() {
+  setup(props) {
     const statuses = ref([]);
+    const selectedFile = ref([]);
+    const isNameEditing = ref(false);
+    const ext = ".csv";
+
     const form = reactive({
       name: '',
-      type: '',
     })
+
     const upload = ref();
+    const files = ref ([]);
+    const selectedTrainSetName = ref("");
+    const modelId = ref();
 
     onMounted(async () => {
+      modelId.value = router.currentRoute.value.params.id;
       statuses.value = (await axios.get('/BaseModelService/statuses')).data;
+      files.value = (await axios.get('/BaseModelService/'+ modelId.value + '/train-sets')).data;
+      selectedTrainSetName.value = files.value
+          .find(obj => obj.fileNameInStorage === props.modelInfo.parameters.nameOfTrainSet)
+          .fileNameInStorage
     })
 
-    const onSubmit = () => {
-      console.log('submit!')
+    function getKeyByValue(object, targetName) {
+      let arrayStatusNames = Array.from(object, (object) => {return object.name});
+      return Object.keys(arrayStatusNames).find( key => arrayStatusNames[key] === targetName);
+    }
+
+    const handleSaveTrainSet = async (e) => {
+      if (selectedTrainSetName){
+        let response = await axios.patch('/BaseModelService/'+ modelId.value + '/train-sets',
+            null,
+            {params:{
+                name: selectedTrainSetName.value
+              }})
+            .then(response => {
+              ElNotification({
+                title: 'Info',
+                message: h('i', { style: 'color: teal' }, 'Training set file is successfully edited'),
+                type: 'info',
+              });
+
+              return response.status
+            })
+            .catch(err => console.warn(err));
+      }
+    }
+
+    const getUrlForUploadFile = async (e) => {
+      console.log(axios.getUri())
+      return axios.getUri();
     }
 
     const handleExceed = (files) => {
-      upload.value.clearFiles()
-      const file = files[0]
-      file.uid = genFileId()
+      const file = files[0];
+      upload.value.clearFiles();
+      file.uid = genFileId();
       upload.value.handleStart(file)
     }
 
-    const submitUpload = () => {
+    const handleUploadBefore = (uploadFile, uploadFiles) => {
+      if (!uploadFile.name.includes(ext)){
+        ElNotification({
+          title: 'Warning',
+          message: h('i', { style: 'color: teal' }, 'Model training file is must be a .csv file'),
+          type: 'warning',
+        });
+        upload.value.clearFiles();
+        selectedFile.value = [];
+      }
+    }
+
+    const submitUpload = (files) => {
       upload.value.submit()
     }
 
     return {
       statuses,
-      form
+      form,
+      isNameEditing,
+      files,
+      selectedTrainSetName,
+      modelId,
+      handleExceed,
+      submitUpload,
+      handleSaveTrainSet,
+      getKeyByValue,
+      upload,
+      selectedFile,
+      handleUploadBefore,
+      getUrlForUploadFile
     }
   }
 }

@@ -1,13 +1,15 @@
 <template>
   <template v-if="parameters">
     <el-descriptions
-        title="Model parameters"
+        title="3 - Model parameters"
         :column="3"
     >
       <div v-for="(value, key) in parameters">
-        <el-descriptions-item :label="key">
-          {{value}}
-        </el-descriptions-item>
+        <div v-if="key!=='nameOfTrainSet'" >
+          <el-descriptions-item :label="key">
+            {{value}}
+          </el-descriptions-item>
+        </div>
       </div>
     </el-descriptions>
   </template>
@@ -22,6 +24,8 @@ export default {
       default: null
     },
   },
+  computed:{
+  }
 }
 </script>
 
