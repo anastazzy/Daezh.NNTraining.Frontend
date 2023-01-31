@@ -169,7 +169,6 @@ export default {
       default: null,
     },
   },
-
   computed: {
     dynamicComponentParams: function () {
       if (this.getKeyByValue(this.statuses, this.modelInfo.statusName) > 0){
@@ -183,7 +182,7 @@ export default {
     },
   },
 
-  setup(props) {
+  setup(props, context) {
     const statuses = ref([]);
     const selectedFile = ref([]);
     const isNameEditing = ref(false);
@@ -256,8 +255,9 @@ export default {
       }
     }
 
-    const submitUpload = (files) => {
-      upload.value.submit()
+    const submitUpload = async () => {
+      upload.value.submit();
+      await context.emit("submit-upload-of-file");
     }
 
     return {

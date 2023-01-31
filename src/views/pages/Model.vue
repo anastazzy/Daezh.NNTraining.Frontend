@@ -1,5 +1,10 @@
 <template>
-  <base-model-form v-if="modelInfo" v-bind:model-info="modelInfo" v-bind:types="types"/>
+  <base-model-form
+      v-if="modelInfo"
+      v-bind:model-info="modelInfo"
+      v-bind:types="types"
+      v-on:submit-upload-of-file="receiveMessage"
+  />
 </template>
 
 <script>
@@ -17,9 +22,10 @@ export default {
     const types = ref([]);
     const modelInfo = ref();
     const name = ref();
+    const index = ref(0);
+    let modelId = router.currentRoute.value.params.id;
 
     onMounted(async () => {
-      let modelId = router.currentRoute.value.params.id;
       types.value = (await axios.get('/BaseModelService/types')).data;
       let response = await axios.get('/BaseModelService/' + modelId);
       if (response.status === 200){
@@ -28,10 +34,19 @@ export default {
       name.value = modelInfo.value.name;
     });
 
+    const receiveMessage = async function (){
+      let response = await axios.get('/BaseModelService/' + modelId);
+      if (response.status === 200){
+        modelInfo.value = response.data
+      }
+    }
+
     return{
+      receiveMessage,
       modelInfo,
       types,
-      name
+      name,
+      index
     }
   }
 }
