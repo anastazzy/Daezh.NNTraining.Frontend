@@ -20,46 +20,48 @@
             :column="2"
             v-if="this.getKeyByValue(this.statuses, this.modelInfo.statusName) !== 0"
         >
-          <el-descriptions-item v-if="selectedTrainSetName && files" label="Choose from uploaded files:">
-            <el-select v-if="selectedTrainSetName" v-model="selectedTrainSetName" class="m-2" placeholder="select">
-              <el-option
-                  v-for="item in files"
-                  :key="item.fileNameInStorage"
-                  :label="item.fileName"
-                  :value="item.fileNameInStorage"
-              />
-            </el-select>
-            <el-button type="primary" @click="handleSaveTrainSet">
-              Save
-            </el-button>
-          </el-descriptions-item>
-<!--          TODO: Make form of uploading file as modal-->
-          <el-descriptions-item v-if="selectedTrainSetName && files" label="Or upload new file:" class="el-row">
-            <el-upload
-                ref="upload"
-                v-model:file-list="selectedFile"
-                class="upload-demo"
-                :action="'/api/BaseModelService/' + modelId + '/train-sets'"
-                :limit="1"
-                :on-exceed="handleExceed"
-                :on-change="handleUploadBefore"
-                :on-success="handleSuccess"
-                :auto-upload="false"
-                name="trainSet"
-            >
-              <template #trigger>
-                <el-button type="primary">select file</el-button>
-              </template>
-              <el-button class="ml-3" type="success" @click="submitUpload">
-                add new file
+          <div v-if="selectedTrainSetName && files">
+            <el-descriptions-item label="Choose from uploaded files:">
+              <el-select v-if="selectedTrainSetName" v-model="selectedTrainSetName" class="m-2" placeholder="select">
+                <el-option
+                    v-for="item in files"
+                    :key="item.fileNameInStorage"
+                    :label="item.fileName"
+                    :value="item.fileNameInStorage"
+                />
+              </el-select>
+              <el-button type="primary" @click="handleSaveTrainSet">
+                Save
               </el-button>
-              <template #tip>
-                <div class="el-upload__tip text-red">
-                  limit 1 file, new file will cover the old file
-                </div>
-              </template>
-            </el-upload>
-          </el-descriptions-item>
+            </el-descriptions-item>
+            <!--          TODO: Make form of uploading file as modal-->
+            <el-descriptions-item label="Or upload new file:" class="el-row">
+              <el-upload
+                  ref="upload"
+                  v-model:file-list="selectedFile"
+                  class="upload-demo"
+                  :action="'/api/BaseModelService/' + modelId + '/train-sets'"
+                  :limit="1"
+                  :on-exceed="handleExceed"
+                  :on-change="handleUploadBefore"
+                  :on-success="handleSuccess"
+                  :auto-upload="false"
+                  name="trainSet"
+              >
+                <template #trigger>
+                  <el-button type="primary">select file</el-button>
+                </template>
+                <el-button class="ml-3" type="success" @click="submitUpload">
+                  add new file
+                </el-button>
+                <template #tip>
+                  <div class="el-upload__tip text-red">
+                    limit 1 file, new file will cover the old file
+                  </div>
+                </template>
+              </el-upload>
+            </el-descriptions-item>
+          </div>
           <el-descriptions-item v-else>
             The model is needs in training dataset file
             <el-upload
@@ -206,7 +208,7 @@ export default {
       name.value = modelInfo.value.name;
       statuses.value = (await axios.get('/BaseModelService/statuses')).data;
       files.value = (await axios.get('/BaseModelService/'+ modelId.value + '/train-sets')).data;
-      if (files.value.length > 0 && modelInfo.value.parameters.length > 0){
+      if (files.value.length > 0){
         selectedTrainSetName.value = files.value
             .find(obj => obj.fileNameInStorage === modelInfo.value.parameters.nameOfTrainSet)
             .fileNameInStorage;
