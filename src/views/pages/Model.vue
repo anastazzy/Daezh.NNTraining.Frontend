@@ -200,10 +200,7 @@ export default {
     onMounted(async () => {
       modelId.value = router.currentRoute.value.params.id;
       types.value = (await axios.get('/BaseModelService/types')).data;
-      let response = await axios.get('/BaseModelService/' + modelId.value);
-      if (response.status === 200){
-        modelInfo.value = response.data
-      }
+      await settingTheModelInfo();
 
       name.value = modelInfo.value.name;
       statuses.value = (await axios.get('/BaseModelService/statuses')).data;
@@ -217,6 +214,13 @@ export default {
 
     const receiveMessage = async function (){
       let response = await axios.get('/BaseModelService/' + modelId);
+      if (response.status === 200){
+        modelInfo.value = response.data
+      }
+    }
+
+    const settingTheModelInfo = async function (){
+      let response = await axios.get('/BaseModelService/' + modelId.value);
       if (response.status === 200){
         modelInfo.value = response.data
       }
@@ -280,7 +284,8 @@ export default {
         message: h('i', { style: 'color: teal' }, 'Training set file is successfully uploaded'),
         type: 'info',
       });
-      console.log("suc")
+      
+      await settingTheModelInfo();
     }
 
     const submitUpload = async () => {
