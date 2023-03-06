@@ -90,64 +90,13 @@
             </el-upload>
           </el-descriptions-item>
         </el-descriptions>
-        <component v-if="selectedTrainSetName" :is="dynamicComponentParams" v-bind:parameters = "modelInfo.parameters"></component>
-        <!--      <el-button type="primary" @click="isNameEditing = true">-->
-        <!--        Edit name-->
-        <!--      </el-button>-->
+        <component
+            v-if = "selectedTrainSetName"
+            :is = "dynamicComponentParams"
+            v-bind:parameters = "modelInfo.parameters"
+        >
+        </component>
     </template>
-      <template v-if="isNameEditing">
-    <!--    <el-header style="text-align: left; font-size: 15px">-->
-    <!--      <el-button type="primary" @click="isNameEditing = false">-->
-    <!--        <el-icon style="margin-top: 1px;"><Back /></el-icon>-->
-    <!--        <span>-->
-    <!--      Back-->
-    <!--      </span>-->
-    <!--      </el-button>-->
-    <!--    </el-header>-->
-    <!--    <el-descriptions-->
-    <!--        title="Edit you`re model according with you requirements"-->
-    <!--        :column="3"-->
-    <!--    />-->
-    <!--    <el-form :model="form" label-width="120px">-->
-    <!--      <el-form-item label="Name">-->
-    <!--        <el-input v-model="form.name" />-->
-    <!--      </el-form-item>-->
-    <!--    </el-form>-->
-    <!--    <el-button type="primary" @click="onSave">-->
-    <!--      Save-->
-    <!--    </el-button>-->
-      </template>
-
-    <el-form>
-      <!--    <el-form-item label="Model name">-->
-      <!--      <el-input v-model="form.name" model-value=""/>-->
-      <!--    </el-form-item>-->
-      <!--    <el-form-item label="Model type">-->
-      <!--      <el-select  v-model="form.type" placeholder="please select type of your model">-->
-      <!--        <el-option v-for="item in types" label="{{item.name}}" value="{{item.id}}" />-->
-      <!--      </el-select>-->
-      <!--    </el-form-item>-->
-      <!--    <el-upload-->
-      <!--        ref="upload"-->
-      <!--        class="upload-demo"-->
-      <!--        action="https://run.mocky.io/v3/9d059bf9-4660-45f2-925d-ce80ad6c4d15"-->
-      <!--        :limit="1"-->
-      <!--        :on-exceed="handleExceed"-->
-      <!--        :auto-upload="false"-->
-      <!--    >-->
-      <!--      <template>-->
-      <!--        <el-button type="primary">select file</el-button>-->
-      <!--      </template>-->
-      <!--      <el-button class="ml-3" type="success" @click="submitUpload">-->
-      <!--        upload to server-->
-      <!--      </el-button>-->
-      <!--      <template>-->
-      <!--        <div class="el-upload__tip text-red">-->
-      <!--          limit 1 file, new file will cover the old file-->
-      <!--        </div>-->
-      <!--      </template>-->
-      <!--    </el-upload>-->
-    </el-form>
   </div>
 </template>
 
@@ -205,6 +154,7 @@ export default {
       name.value = modelInfo.value.name;
       statuses.value = (await axios.get('/BaseModelService/statuses')).data;
       files.value = (await axios.get('/BaseModelService/'+ modelId.value + '/train-sets')).data;
+
       if (files.value.length > 0){
         selectedTrainSetName.value = files.value
             .find(obj => obj.fileNameInStorage === modelInfo.value.parameters.nameOfTrainSet)
@@ -278,13 +228,13 @@ export default {
     const handleSuccess = async (response) => {
       files.value = (await axios.get('/BaseModelService/'+ modelId.value + '/train-sets')).data;
       selectedTrainSetName.value = response;
-      console.log("123")
+
       ElNotification({
         title: 'Info',
         message: h('i', { style: 'color: teal' }, 'Training set file is successfully uploaded'),
         type: 'info',
       });
-      
+
       await settingTheModelInfo();
     }
 
