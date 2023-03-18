@@ -94,6 +94,7 @@
             v-if = "selectedTrainSetName"
             :is = "dynamicComponentParams"
             v-bind:parameters = "modelInfo.parameters"
+            @saveParams="onSaveParameters"
         >
         </component>
     </template>
@@ -238,6 +239,19 @@ export default {
       await settingTheModelInfo();
     }
 
+    const onSaveParameters = async function (value){
+      let response = await axios.post('/BaseModelService/' + modelId.value + '/params', {
+        "nameOfTrainSet": modelInfo.value.parameters.nameOfTrainSet,
+        "nameOfTargetColumn": value.nameOfTargetColumn,
+        "hasHeader": value.hasHeader.value,
+        "separators": [value.separators]
+      });
+      if (response.status === 200){
+        await settingTheModelInfo();
+
+      }
+    };
+
     const submitUpload = async () => {
       upload.value.submit();
     }
@@ -262,7 +276,8 @@ export default {
       selectedFile,
       handleUploadBefore,
       getUrlForUploadFile,
-      handleSuccess
+      handleSuccess,
+      onSaveParameters
     }
   }
 }
