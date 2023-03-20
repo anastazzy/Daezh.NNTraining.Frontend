@@ -55,7 +55,7 @@ export default {
   name: "DataPredictionParams",
   props:{
     parameters: {
-      type: Array,
+      type: Object,
       default: null
     },
   },

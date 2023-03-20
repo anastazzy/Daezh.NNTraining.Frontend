@@ -16,23 +16,50 @@
             highlight-current-row
             style="width: 100%">
           <el-table-column type="index" width="50" />
-          <el-table-column label="Name" prop="name" width="120" />
-          <el-table-column label="Status" prop="modelStatus" width="150" />
-          <el-table-column label="Typ" prop="modelType" width="120" />
-          <el-table-column label="Operations" width="200" >
+          <el-table-column label="Name" prop="name" width="150" />
+          <el-table-column label="Type" prop="typeName" width="250" />
+          <el-table-column label="Status" prop="statusName" width="250" />
+          <el-table-column label="Fast Operations" width="200" >
             <template #default="scope">
               <el-button
                   size="small"
-                  type="primary"
+                  type="warning"
+                  plain
                   @click="handleView(scope.$index, scope.row)">
                 View
               </el-button>
               <el-button
                   size="small"
                   type="danger"
-                  @click="">
+                  plain
+                  @click="handleDelete(scope.row.id)">
                 Delete Model
               </el-button>
+            </template>
+          </el-table-column>
+          <el-table-column label="" width="200" >
+            <template #default="scope">
+              <div v-if="scope.row.statusId === 3"
+                   v-loading="loading"
+                   element-loading-text="Process of training..."
+                   element-loading-background="rgba(122, 122, 122, 0.8)">
+                process...
+              </div>
+              <div v-else>
+                <el-button
+                    size="small"
+                    type="success"
+                    plain
+                    @click="trainModel(scope.row.id)"
+                    v-if="scope.row.statusId === 2">
+                  Train model
+                </el-button>
+              </div>
+              <div v-if="scope.row.statusId === 4">
+done
+<!--                сделать кнопку типо попробовать-->
+<!--                модальное окно, куда помещаешь параметр, который надо предсказать (динамически в зависимости от типа моделм)-->
+              </div>
             </template>
           </el-table-column>
         </el-table>
@@ -43,7 +70,8 @@
           <el-button
               type="success"
               plain
-              @click="choosingTheModelForm">Create the first Model
+              @click="choosingTheModelForm"
+          >Create the first Model
           </el-button>
         </div>
         <div v-else>
@@ -82,6 +110,7 @@ import StartWindow from "@/components/StartWindow";
 import axios from "axios";
 import { ref, onMounted } from "vue";
 import router from "@/router";
+import modelHub from "@/ws/modelHub";
 
 export default {
   name: "StartPage",
@@ -94,9 +123,20 @@ export default {
     const isChooseOfModelType = ref(false);
     const isModelsExist = ref(false);
     const nameModel = ref(null);
-    const listOfModels = ref([])
-    let isModelView = ref(false)
+    const listOfModels = ref([]);
+    let isModelView = ref(false);
     let modelInfo = ref ();
+    const loading = ref(false)
+    const svg = `
+        <path class="path" d="
+          M 30 15
+          L 28 17
+          M 25.61 25.61
+          A 15 15, 0, 0, 1, 15 30
+          A 15 15, 0, 1, 1, 27.99 7.5
+          L 15 15
+        " style="stroke-width: 4px; fill: rgba(0, 0, 0, 0)"/>
+      `
 
     const handleView = async (index, model) => {
       let response = await axios.get('/BaseModelService/' + model.id);
@@ -111,15 +151,34 @@ export default {
       }
     };
 
+    const trainModel = async (modelId) => {
+      await axios.post('/ModelInteraction/train/' + modelId);
+    };
+
     onMounted(async () => {
+      await initModelsAsync();
+
+      modelHub.on("getLoadingElement", async (statusId, modelId) => {
+        let currentModel = listOfModels.value.find(x => x.id === modelId);
+        currentModel.statusId = statusId;
+        console.log(statusId)
+      })
+    })
+
+    const handleDeleteAsync = async (modelId) => {
+      await axios.delete('/BaseModelService/' + modelId);
+      await initModelsAsync();
+    }
+
+    const initModelsAsync = async () => {
       listTypeOfModels.value = (await axios.get('/BaseModelService/types')).data;
 
       let currentModels = await  axios.get('/BaseModelService');
-      if (currentModels.data.length > 0){
+      if (currentModels.data.length > 0) {
         isModelsExist.value = true;
         listOfModels.value = currentModels.data;
       }
-    })
+    }
 
     const handleCreate = async () => {
       const date = new Date(Date.now());
@@ -155,7 +214,11 @@ export default {
       handleCreate,
       listOfModels,
       handleView,
-      isModelView
+      trainModel,
+      handleDelete: handleDeleteAsync,
+      isModelView,
+      loading,
+      svg
     }
   }
 }

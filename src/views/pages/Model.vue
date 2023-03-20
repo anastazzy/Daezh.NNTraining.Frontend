@@ -1,4 +1,13 @@
 <template>
+  <el-container>
+  <el-header style="text-align: left; font-size: 15px">
+    <el-button>
+      <el-icon style="margin-right: 8px; margin-top: 1px;"><Back /></el-icon>
+      <span>
+        Back
+        </span>
+    </el-button>
+  </el-header>
   <div v-if="modelInfo">
     <template v-if="!isNameEditing">
         <el-descriptions
@@ -99,6 +108,7 @@
         </component>
     </template>
   </div>
+  </el-container>
 </template>
 
 <script>
