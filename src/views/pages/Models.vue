@@ -1,17 +1,18 @@
 <template>
-<!--  <StartWindow/>-->
+  <!--  <StartWindow/>-->
   <el-container>
-    <el-header style="text-align: left; font-size: 15px">
-      <el-button>
-        <el-icon style="margin-right: 8px; margin-top: 1px;"><Back /></el-icon>
-        <span>
-        Back
-        </span>
-      </el-button>
-    </el-header>
+<!--    <el-header style="text-align: left; font-size: 15px">-->
+<!--      <el-button>-->
+<!--        <el-icon style="margin-right: 8px; margin-top: 1px;"><Back /></el-icon>-->
+<!--        <span>-->
+<!--        Back-->
+<!--        </span>-->
+<!--      </el-button>-->
+<!--    </el-header>-->
     <el-main>
       <div v-if="isModelsExist">
         <el-table
+            v-if="!isCreation"
             :data="listOfModels"
             highlight-current-row
             style="width: 100%">
@@ -32,7 +33,7 @@
                   size="small"
                   type="danger"
                   plain
-                  @click="handleDelete(scope.row.id)">
+                  @click="handleDeleteAsync(scope.row.id)">
                 Delete Model
               </el-button>
             </template>
@@ -56,49 +57,44 @@
                 </el-button>
               </div>
               <div v-if="scope.row.statusId === 4">
-done
-<!--                сделать кнопку типо попробовать-->
-<!--                модальное окно, куда помещаешь параметр, который надо предсказать (динамически в зависимости от типа моделм)-->
+                done
+                <!--                сделать кнопку типо попробовать-->
+                <!--                модальное окно, куда помещаешь параметр, который надо предсказать (динамически в зависимости от типа моделм)-->
               </div>
             </template>
           </el-table-column>
         </el-table>
       </div>
       <div v-else>
-        <div v-if="!isChooseOfModelType">
-          You don`t have any model at now!
-          <el-button
-              type="success"
-              plain
-              @click="choosingTheModelForm"
-          >Create the first Model
-          </el-button>
-        </div>
-        <div v-else>
-          Choose the model type:
-          <el-table
-              :data="listTypeOfModels"
-              highlight-current-row
-              style="width: 100%"
-              @current-change="onRowChange">
-            <el-table-column prop="name" width="120" />
-          </el-table>
-          <el-input
-              v-if="modelType != null"
-              v-model="nameModel"
-              placeholder="Name your model">
-          </el-input>
-          <el-button
-              v-if="modelType != null"
-              @click="handleCreate">
-            Create a Model
-          </el-button>
-        </div>
+        У вас нет ни одной модели! Скорее попробуйте ее создать!
       </div>
+      <el-dialog v-model="dialogFormVisible" title="Shipping address" append-to-body>
+        <el-form :model="creationForm">
+          <el-form-item label="Named your model">
+            <el-input v-model="creationForm.name" autocomplete="off" />
+          </el-form-item>
+          <el-form-item label="Chose the model type">
+            <el-select v-model="creationForm.modelType" placeholder="Please select a zone">
+              <el-option v-for="type in listTypeOfModels"
+                         :key="type.id"
+                         :label="type.name"
+                         :value="type.id">
+              </el-option>
+            </el-select>
+          </el-form-item>
+        </el-form>
+        <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="dialogFormVisible = false">Cancel</el-button>
+        <el-button type="primary" @click="handleCreate(creationForm)">
+          Confirm
+        </el-button>
+      </span>
+        </template>
+      </el-dialog>
     </el-main>
     <el-footer>
-      <el-button
-          @click="handleCreate">
+      <el-button text @click="dialogFormVisible = true">
         Create model
       </el-button>
     </el-footer>
@@ -106,37 +102,30 @@ done
 </template>
 <script>
 
-import StartWindow from "@/components/StartWindow";
 import axios from "axios";
-import { ref, onMounted } from "vue";
+import {ref, onMounted, h} from "vue";
 import router from "@/router";
 import modelHub from "@/ws/modelHub";
+import {reactive} from "vue";
+import {ElForm, ElMessage, ElMessageBox} from "element-plus";
 
 export default {
-  name: "StartPage",
-  components: {
-    StartWindow
-  },
   setup() {
     const listTypeOfModels = ref([]);
     const modelType = ref(null);
     const isChooseOfModelType = ref(false);
     const isModelsExist = ref(false);
+    const isCreation = ref(false);
     const nameModel = ref(null);
     const listOfModels = ref([]);
     let isModelView = ref(false);
+    const dialogFormVisible = ref(false);
     let modelInfo = ref ();
-    const loading = ref(false)
-    const svg = `
-        <path class="path" d="
-          M 30 15
-          L 28 17
-          M 25.61 25.61
-          A 15 15, 0, 0, 1, 15 30
-          A 15 15, 0, 1, 1, 27.99 7.5
-          L 15 15
-        " style="stroke-width: 4px; fill: rgba(0, 0, 0, 0)"/>
-      `
+    const loading = ref(false);
+    const creationForm = reactive({
+      name: '',
+      modelType: 0,
+    })
 
     const handleView = async (index, model) => {
       let response = await axios.get('/BaseModelService/' + model.id);
@@ -180,20 +169,18 @@ export default {
       }
     }
 
-    const handleCreate = async () => {
+    const handleCreate = async (creationForm) => {
       const date = new Date(Date.now());
       let response = await axios.post('/BaseModelService', {
-        "name": nameModel.value,
-        "modelType": modelType.value.id,
+        "name": creationForm.name,
+        "modelType": creationForm.modelType,
         "modelStatus": 0,
         "parameters": {
           "startDate": date.toISOString()
         }
       });
-      if (response.status === 200){
-        await router.push({name: 'Models'})
-      }
-      console.log(response)
+      dialogFormVisible.value = false;
+      await initModelsAsync();
     }
     const onRowChange = (value) => {
       modelType.value = value;
@@ -215,10 +202,12 @@ export default {
       listOfModels,
       handleView,
       trainModel,
-      handleDelete: handleDeleteAsync,
+      handleDeleteAsync,
       isModelView,
       loading,
-      svg
+      isCreation,
+      creationForm,
+      dialogFormVisible
     }
   }
 }

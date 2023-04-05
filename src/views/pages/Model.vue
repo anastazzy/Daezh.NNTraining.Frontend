@@ -1,8 +1,10 @@
 <template>
   <el-container>
   <el-header style="text-align: left; font-size: 15px">
-    <el-button>
-      <el-icon style="margin-right: 8px; margin-top: 1px;"><Back /></el-icon>
+    <el-button @click="getPreviousPage">
+      <el-icon style="margin-right: 8px; margin-top: 1px;">
+        <Back />
+      </el-icon>
       <span>
         Back
         </span>
@@ -112,6 +114,7 @@
 </template>
 
 <script>
+
 import { ref, onMounted } from "vue";
 import axios from "axios";
 import router from "@/router";
@@ -140,7 +143,7 @@ export default {
     },
   },
 
-  setup(props, context){
+  setup(){
     const upload = ref();
     const files = ref ([]);
     const selectedTrainSetName = ref("");
@@ -236,6 +239,10 @@ export default {
       }
     }
 
+    const getPreviousPage = () => {
+      router.replace('/models');
+    }
+
     const handleSuccess = async (response) => {
       files.value = (await axios.get('/BaseModelService/'+ modelId.value + '/train-sets')).data;
       selectedTrainSetName.value = response;
@@ -268,6 +275,7 @@ export default {
 
     return{
       receiveMessage,
+      getPreviousPage,
       modelInfo,
       types,
       name,
