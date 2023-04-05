@@ -49,7 +49,7 @@
               <div v-else>
                 <el-button
                     size="small"
-                    type="success"
+                    type="info"
                     plain
                     @click="trainModel(scope.row.id)"
                     v-if="scope.row.statusId === 2">
@@ -58,6 +58,13 @@
               </div>
               <div v-if="scope.row.statusId === 4">
                 done
+                <el-button
+                    size="small"
+                    type="success"
+                    plain
+                    @click="openPredictPage(scope.row.id)">
+                  Use model
+                </el-button>
                 <!--                сделать кнопку типо попробовать-->
                 <!--                модальное окно, куда помещаешь параметр, который надо предсказать (динамически в зависимости от типа моделм)-->
               </div>
@@ -68,13 +75,13 @@
       <div v-else>
         У вас нет ни одной модели! Скорее попробуйте ее создать!
       </div>
-      <el-dialog v-model="dialogFormVisible" title="Shipping address" append-to-body>
+      <el-dialog v-model="dialogFormVisible" title="Creation model" append-to-body>
         <el-form :model="creationForm">
           <el-form-item label="Named your model">
             <el-input v-model="creationForm.name" autocomplete="off" />
           </el-form-item>
           <el-form-item label="Chose the model type">
-            <el-select v-model="creationForm.modelType" placeholder="Please select a zone">
+            <el-select v-model="creationForm.modelType" placeholder="Please select a model type">
               <el-option v-for="type in listTypeOfModels"
                          :key="type.id"
                          :label="type.name"
@@ -92,6 +99,21 @@
       </span>
         </template>
       </el-dialog>
+      <el-dialog v-model="modelToPredict" title="Filling the parameters fo prediction" append-to-body>
+        <component
+            v-if = "modelToPredict"
+            :is = "dynamicComponentPredictForm"
+        >
+        </component>
+        <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="modelToPredict = null">Cancel</el-button>
+        <el-button type="primary" @click="">
+          Predict
+        </el-button>
+      </span>
+        </template>
+      </el-dialog>
     </el-main>
     <el-footer>
       <el-button text @click="dialogFormVisible = true">
@@ -103,13 +125,18 @@
 <script>
 
 import axios from "axios";
-import {ref, onMounted, h} from "vue";
+import {ref, onMounted, h, computed} from "vue";
 import router from "@/router";
 import modelHub from "@/ws/modelHub";
 import {reactive} from "vue";
 import {ElForm, ElMessage, ElMessageBox} from "element-plus";
+import DataPredictionPredictForm from "@/components/PredictForms/DataPredictionPredictForm";
 
 export default {
+  name: "Models",
+  components: {
+    DataPredictionPredictForm,
+  },
   setup() {
     const listTypeOfModels = ref([]);
     const modelType = ref(null);
@@ -121,10 +148,25 @@ export default {
     let isModelView = ref(false);
     const dialogFormVisible = ref(false);
     let modelInfo = ref ();
+    const statuses = ref ();
+    const modelToPredict = ref (null);
     const loading = ref(false);
+    const isTrainedModel = ref(false);
     const creationForm = reactive({
       name: '',
       modelType: 0,
+    })
+
+    onMounted(async () => {
+      await initModelsAsync();
+
+      statuses.value = (await axios.get('/BaseModelService/statuses')).data;
+
+      modelHub.on("getLoadingElement", async (statusId, modelId) => {
+        let currentModel = listOfModels.value.find(x => x.id === modelId);
+        currentModel.statusId = statusId;
+        console.log(statusId)
+      });
     })
 
     const handleView = async (index, model) => {
@@ -140,19 +182,31 @@ export default {
       }
     };
 
+    const dynamicComponentPredictForm = computed(() => {
+      let currentModel = listOfModels.value.find(x => x.id === modelToPredict.value);
+      if (currentModel){
+        switch (currentModel.typeName){
+          case listTypeOfModels.value[0].name:
+            return 'data-prediction-predict-form'
+          default:
+            break
+        }
+      }
+    })
+
+    function getKeyByValue(object, targetName) {
+      let arrayStatusNames = Array.from(object, (object) => {return object.name});
+      return Object.keys(arrayStatusNames).find( key => arrayStatusNames[key] === targetName);
+    }
+
     const trainModel = async (modelId) => {
       await axios.post('/ModelInteraction/train/' + modelId);
     };
 
-    onMounted(async () => {
-      await initModelsAsync();
-
-      modelHub.on("getLoadingElement", async (statusId, modelId) => {
-        let currentModel = listOfModels.value.find(x => x.id === modelId);
-        currentModel.statusId = statusId;
-        console.log(statusId)
-      })
-    })
+    const openPredictPage = async (modelId) => {
+      modelToPredict.value = modelId;
+      // await axios.post('/ModelInteraction/predict/' + modelId);
+    };
 
     const handleDeleteAsync = async (modelId) => {
       await axios.delete('/BaseModelService/' + modelId);
@@ -182,10 +236,11 @@ export default {
       dialogFormVisible.value = false;
       await initModelsAsync();
     }
+
     const onRowChange = (value) => {
       modelType.value = value;
-      console.log(modelType.value)
     }
+
     const choosingTheModelForm = () => {
       isChooseOfModelType.value = true
     }
@@ -207,7 +262,13 @@ export default {
       loading,
       isCreation,
       creationForm,
-      dialogFormVisible
+      dialogFormVisible,
+      isTrainedModel,
+      openPredictPage,
+      modelToPredict,
+      getKeyByValue,
+      statuses,
+      dynamicComponentPredictForm
     }
   }
 }
