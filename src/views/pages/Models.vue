@@ -57,7 +57,6 @@
                 </el-button>
               </div>
               <div v-if="scope.row.statusId === 4">
-                done
                 <el-button
                     size="small"
                     type="success"
@@ -65,8 +64,6 @@
                     @click="openPredictPage(scope.row.id)">
                   Use model
                 </el-button>
-                <!--                сделать кнопку типо попробовать-->
-                <!--                модальное окно, куда помещаешь параметр, который надо предсказать (динамически в зависимости от типа моделм)-->
               </div>
             </template>
           </el-table-column>
@@ -99,20 +96,16 @@
       </span>
         </template>
       </el-dialog>
-      <el-dialog v-model="modelToPredict" title="Filling the parameters fo prediction" append-to-body>
+      <el-dialog v-model="modelToPredict" title="Filling the parameters for prediction" append-to-body>
         <component
             v-if = "modelToPredict"
             :is = "dynamicComponentPredictForm"
+            v-bind:parameters = "paramsToPredict"
+            v-bind:result = "predictionResult"
+            @getResult="predict"
+            @cancel="closePredictWindow"
         >
         </component>
-        <template #footer>
-      <span class="dialog-footer">
-        <el-button @click="modelToPredict = null">Cancel</el-button>
-        <el-button type="primary" @click="">
-          Predict
-        </el-button>
-      </span>
-        </template>
       </el-dialog>
     </el-main>
     <el-footer>
@@ -145,6 +138,7 @@ export default {
     const isCreation = ref(false);
     const nameModel = ref(null);
     const listOfModels = ref([]);
+    const paramsToPredict = ref([]);
     let isModelView = ref(false);
     const dialogFormVisible = ref(false);
     let modelInfo = ref ();
@@ -152,6 +146,7 @@ export default {
     const modelToPredict = ref (null);
     const loading = ref(false);
     const isTrainedModel = ref(false);
+    const predictionResult = ref({});
     const creationForm = reactive({
       name: '',
       modelType: 0,
@@ -203,9 +198,24 @@ export default {
       await axios.post('/ModelInteraction/train/' + modelId);
     };
 
+    const predict = async (value) => {
+      const response = await axios.post('/ModelInteraction/predict/' + modelToPredict.value, value);
+      console.log(response);
+      if (response.status === 200){
+        predictionResult.value = response.data;
+      } else {
+        predictionResult.value = null;
+      }
+    };
+
+    const closePredictWindow = () => {
+      modelToPredict.value = null;
+      predictionResult.value = null;
+    };
+
     const openPredictPage = async (modelId) => {
       modelToPredict.value = modelId;
-      // await axios.post('/ModelInteraction/predict/' + modelId);
+      paramsToPredict.value = (await axios.get('/ModelInteraction/predict/' + modelId)).data;
     };
 
     const handleDeleteAsync = async (modelId) => {
@@ -268,7 +278,11 @@ export default {
       modelToPredict,
       getKeyByValue,
       statuses,
-      dynamicComponentPredictForm
+      dynamicComponentPredictForm,
+      paramsToPredict,
+      predict,
+      closePredictWindow,
+      predictionResult
     }
   }
 }
