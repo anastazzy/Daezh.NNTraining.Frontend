@@ -1,14 +1,5 @@
 <template>
-  <!--  <StartWindow/>-->
   <el-container>
-<!--    <el-header style="text-align: left; font-size: 15px">-->
-<!--      <el-button>-->
-<!--        <el-icon style="margin-right: 8px; margin-top: 1px;"><Back /></el-icon>-->
-<!--        <span>-->
-<!--        Back-->
-<!--        </span>-->
-<!--      </el-button>-->
-<!--    </el-header>-->
     <el-main>
       <div v-if="isModelsExist">
         <el-table
@@ -137,7 +128,7 @@ import {ref, onMounted, h, computed} from "vue";
 import router from "@/router";
 import modelHub from "@/ws/modelHub";
 import {reactive} from "vue";
-import {ElForm, ElMessage, ElMessageBox} from "element-plus";
+import {ElForm} from "element-plus";
 import DataPredictionPredictForm from "@/components/PredictForms/DataPredictionPredictForm";
 
 export default {
@@ -175,6 +166,9 @@ export default {
       modelHub.on("getLoadingElement", async (statusId, modelId) => {
         let currentModel = listOfModels.value.find(x => x.id === modelId);
         currentModel.statusId = statusId;
+        let otherModels = listOfModels.value.filter(x => x.id !== modelId);
+        otherModels.push(currentModel);
+        listOfModels.value = otherModels;
       });
 
       modelHub.on("getPredictionResult", async (result, modelId) => {
@@ -208,11 +202,6 @@ export default {
         }
       }
     })
-
-    function getKeyByValue(object, targetName) {
-      let arrayStatusNames = Array.from(object, (object) => {return object.name});
-      return Object.keys(arrayStatusNames).find( key => arrayStatusNames[key] === targetName);
-    }
 
     const trainModel = async (modelId) => {
       await axios.post('/ModelInteraction/train/' + modelId);
@@ -290,7 +279,6 @@ export default {
       isTrainedModel,
       openPredictPage,
       modelToPredict,
-      getKeyByValue,
       statuses,
       dynamicComponentPredictForm,
       paramsToPredict,
