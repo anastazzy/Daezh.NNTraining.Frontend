@@ -40,23 +40,34 @@
           </el-table-column>
           <el-table-column label="" width="200" >
             <template #default="scope">
+              <div  v-if="scope.row.statusId === 2">
+                <el-button
+                    size="small"
+                    type="info"
+                    plain
+                    @click="trainModel(scope.row.id)">
+                  Train model
+                </el-button>
+              </div>
               <div v-if="scope.row.statusId === 3"
+                   v-loading="loading"
+                   element-loading-text="Process of training..."
+                   element-loading-background="rgba(122, 122, 122, 0.8)">
+                waiting...
+              </div>
+              <div v-if="scope.row.statusId === 4"
                    v-loading="loading"
                    element-loading-text="Process of training..."
                    element-loading-background="rgba(122, 122, 122, 0.8)">
                 process...
               </div>
-              <div v-else>
-                <el-button
-                    size="small"
-                    type="info"
-                    plain
-                    @click="trainModel(scope.row.id)"
-                    v-if="scope.row.statusId === 2">
-                  Train model
-                </el-button>
+              <div v-if="scope.row.statusId === 5"
+                   v-loading="loading"
+                   element-loading-text="Process of training..."
+                   element-loading-background="rgba(122, 122, 122, 0.8)">
+                error of training...
               </div>
-              <div v-if="scope.row.statusId === 4">
+              <div v-if="scope.row.statusId === 6">
                 <el-button
                     size="small"
                     type="success"
@@ -64,6 +75,10 @@
                     @click="openPredictPage(scope.row.id)">
                   Use model
                 </el-button>
+              </div>
+              <div v-if="scope.row.statusId === 8"
+                    @click="openPredictPage(scope.row.id)">
+                Ошибка использования модели
               </div>
             </template>
           </el-table-column>
@@ -160,7 +175,11 @@ export default {
       modelHub.on("getLoadingElement", async (statusId, modelId) => {
         let currentModel = listOfModels.value.find(x => x.id === modelId);
         currentModel.statusId = statusId;
-        console.log(statusId)
+      });
+
+      modelHub.on("getPredictionResult", async (result, modelId) => {
+        predictionResult.value = result;
+        console.log(result)
       });
     })
 
@@ -175,6 +194,7 @@ export default {
             id: model.id
           }})
       }
+      console.log(model)
     };
 
     const dynamicComponentPredictForm = computed(() => {
@@ -200,12 +220,6 @@ export default {
 
     const predict = async (value) => {
       const response = await axios.post('/ModelInteraction/predict/' + modelToPredict.value, value);
-      console.log(response);
-      if (response.status === 200){
-        predictionResult.value = response.data;
-      } else {
-        predictionResult.value = null;
-      }
     };
 
     const closePredictWindow = () => {
@@ -215,7 +229,7 @@ export default {
 
     const openPredictPage = async (modelId) => {
       modelToPredict.value = modelId;
-      paramsToPredict.value = (await axios.get('/ModelInteraction/predict/' + modelId)).data;
+      paramsToPredict.value = (await axios.get('/BaseModelService/schema/' + modelId)).data;
     };
 
     const handleDeleteAsync = async (modelId) => {

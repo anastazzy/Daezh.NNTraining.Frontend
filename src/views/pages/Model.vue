@@ -257,15 +257,21 @@ export default {
     }
 
     const onSaveParameters = async function (value){
-      let response = await axios.post('/BaseModelService/' + modelId.value + '/params', {
-        "nameOfTrainSet": modelInfo.value.parameters.nameOfTrainSet,
-        "nameOfTargetColumn": value.nameOfTargetColumn,
-        "hasHeader": value.hasHeader.value,
-        "separators": [value.separators]
-      });
-      if (response.status === 200){
-        await settingTheModelInfo();
-
+      try {
+        const data = {
+          "nameOfTrainSet": modelInfo.value.parameters.nameOfTrainSet,
+          "nameOfTargetColumn": value.nameOfTargetColumn,
+          // "hasHeader": value.hasHeader.valueOf(),
+          "hasHeader": value.hasHeader === 'true'? true : false,
+          "separators": [value.separators]
+        };
+        console.log(data)
+        const response = await axios.post('/BaseModelService/' + modelId.value + '/params', data);
+        if (response.status === 200){
+          await settingTheModelInfo();
+        }
+      } catch (e) {
+        console.log(e)
       }
     };
 
